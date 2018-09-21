@@ -236,6 +236,10 @@ void RobotPositionController::setTargetPosition(const Eigen::VectorXf& position)
     _pid_controller.setTarget(position);
 }
 
+RobotPtr RobotPositionController::getRobot() const {
+    return _robot.lock();
+}
+
 bool RobotPositionController::control(const Eigen::VectorXf &positions, const Eigen::VectorXf &velocities,
                                       float timestep, RobotConstPtr robot,
                                       Eigen::VectorXf &output) {
