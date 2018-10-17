@@ -204,15 +204,15 @@ namespace sim_env {
          */
         struct BlindBoxIndexGenerator {
             private:
-                const size_t _dx;
-                const size_t _dy;
-                const size_t _dz;
+                // const size_t _dx;
+                // const size_t _dy;
+                // const size_t _dz;
                 IndexGenerator<long> _relative_idx_gen;
                 const SignedIndex _base_idx;
             public:
                 BlindBoxIndexGenerator(const long& dx, const long& dy, const long& dz,
                                         const long& cx, const long& cy, const long& cz) :
-                    _dx(dx + 1), _dy(dy + 1), _dz(dz + 1),
+                    // _dx(dx + 1), _dy(dy + 1), _dz(dz + 1),
                     _relative_idx_gen(2 * dx + 1, 2 * dy + 1, 2* dz + 1),
                     _base_idx(cx - dx, cy - dy, cz - dz)
                 {
