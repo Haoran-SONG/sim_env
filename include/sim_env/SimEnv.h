@@ -789,6 +789,10 @@ public:
      * @param include_drawings - if true, it also ensures that all user drawings are visible
      */
     virtual void centerCamera(bool include_drawings = false) = 0;
+    /**
+     *  Resets the camera to default view.
+     */
+    virtual void resetCamera() = 0;
 
     virtual WorldPtr getWorld() const = 0;
     virtual void removeDrawing(const Handle& handle) = 0;
