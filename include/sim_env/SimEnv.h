@@ -797,6 +797,14 @@ public:
     virtual WorldPtr getWorld() const = 0;
     virtual void removeDrawing(const Handle& handle) = 0;
     virtual void removeAllDrawings() = 0;
+
+    /**
+     * Sets whether to show the object/robot with the given name in the viewer.
+     * By default all objects/robots are shown.
+     * @param name - name of the object to show or hide
+     * @param visible - if true, show it, else hide. 
+     */
+    virtual void setVisible(const std::string& name, bool visible) = 0;
 };
 
 /* Typedefs for shared pointers on this class */
