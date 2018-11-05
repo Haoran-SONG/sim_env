@@ -735,9 +735,123 @@ public:
         unsigned int _id;
     };
 
-    virtual ~WorldViewer() = 0;
+    class ImageRenderer {
+        /**
+         * An ImageRenderer allows you to render camera images of a scene. 
+         * The underlying implementation guarantees that an ImageRenderer can also be used
+         * in non-GUI threads.
+         */
+    public:
+        virtual ~ImageRenderer() = 0;
+
+        /**
+         *  Render the scene from the current camera view to an image and store this image under the given name.
+         *  The underlying implementation guarantees that this method is thread-safe.
+         *  @param filename - path + name of where to store the image. The image format may depend on the implementation.
+         *  @param width - width in pixels of the image
+         *  @param height - height in pixels
+         *  @param include_drawings - if true, also render additional drawings in image, else not
+         */
+        virtual bool renderImage(const std::string& filename, unsigned int width, unsigned int height, bool include_drawings = false) = 0;
+        // TODO add renderImage from different camera transformations if needed
+        /**
+         *  Position the camera such that all bodies in the scene are visible.
+         * @param include_drawings - if true, it also ensures that all user drawings are visible
+         */
+        virtual void centerCamera(bool include_drawings = false) = 0;
+        /**
+         *  Resets the camera to default view.
+         */
+        virtual void resetCamera() = 0;
+
+        /**
+         * Sets whether to show the object/robot with the given name when rendering images.
+         * By default all objects/robots are shown.
+         * @param name - name of the object to show or hide
+         * @param visible - if true, show it, else hide. 
+         */
+        virtual void setVisible(const std::string& name, bool visible) = 0;
+
+        /**
+         * Set the color of the object/robot with the given name.
+         * By default all objects/robots are shown.
+         * @param name - name of the object to show or hide
+         * @param visible - if true, show it, else hide. 
+         */
+        virtual void setColor(const std::string& name, const Eigen::Vector4f& color) = 0;
+        /**
+         * Draw a coordinate frame.
+         * @param transform - the transformation matrix from the target frame to world frame
+         * @param length - length of arrows
+         * @param widt - width of arrows.
+         */
+        virtual Handle drawFrame(const Eigen::Affine3f& transform, float length = 1.0f, float width = 0.1f) = 0;
+        /**
+             * Draw a box at the provided position with the given extents.
+             * The box spans from pos to pos + extents
+             * @param pos - box position (with minimal coordinates)
+             * @param extent - (width, depth, height)
+             * @param color - rgba color (in range [0,1]^4)
+             * @param solid - flag whether to draw a solid or non-solid box
+             * @param edge_width - thickness of lines
+             */
+        virtual Handle drawBox(const Eigen::Vector3f& pos, const Eigen::Vector3f& extent,
+            const Eigen::Vector4f& color = Eigen::Vector4f(0.0f, 0.0f, 0.0f, 1.0f),
+            bool solid = false, float edge_width = 0.1f)
+            = 0;
+
+        /**
+             * Draws a line from position start to position end.
+             * @param start  - position where the line segment should start
+             * @param end  - position where the line segment should end
+             * @param color - rgba color (in range [0,1]^4)
+             * @param width - width of the line
+             * @return handle to delete the line again
+             */
+        virtual Handle drawLine(const Eigen::Vector3f& start, const Eigen::Vector3f& end,
+            const Eigen::Vector4f& color = Eigen::Vector4f(0.0f, 0.0f, 0.0f, 1.0f),
+            float width = 0.1f)
+            = 0;
+
+        /**
+             * Draws a sphere with the given radius centered at center.
+             * @param center - center position of the sphere.
+             * @param radius - radius of the sphere.
+             * @param color - (optional) rbda color of the sphere
+             * @param width - (optional) width of the line
+             * TODO: some option to only draw a 2d circle
+             * @return handle to delete this sphere again
+             */
+        virtual Handle drawSphere(const Eigen::Vector3f& center, float radius,
+            const Eigen::Vector4f& color = Eigen::Vector4f(0.0f, 0.0f, 0.0f, 1.0f),
+            float width = 0.1f)
+            = 0;
+
+        /**
+             * Draws the given voxel grid. The grid is assumed to store a color for each cell.
+             * @param grid - a voxel grid that stores the color for each voxel
+             * @param old_handle (optional) - a handle to a previously drawn instance of a voxel grid that is supposed to
+             *      be replaced by this new drawing. Providing this may save resources, but you need to ensure that the new
+             *      grid has the same dimensions as the previous one.
+             * @return handle to delete this grid again
+             */
+        virtual Handle drawVoxelGrid(const grid::VoxelGrid<float, Eigen::Vector4f>& grid, const Handle& old_handle = Handle(false)) = 0;
+    };
+    typedef std::shared_ptr<ImageRenderer> ImageRendererPtr;
+    typedef std::shared_ptr<const ImageRenderer> ImageRendererConstPtr;
+    typedef std::weak_ptr<ImageRenderer> ImageRendererWeakPtr;
+    typedef std::weak_ptr<const ImageRenderer> ImageRendererWeakConstPtr;
+
+    virtual ~WorldViewer()
+        = 0;
 
     //TODO define all drawing functions here; provide support for setting colors and width
+    /**
+         * Draw a coordinate frame.
+         * @param transform - the transformation matrix from the target frame to world frame
+         * @param length - length of arrows
+         * @param widt - width of arrows.
+         */
     virtual Handle drawFrame(const Eigen::Affine3f& transform, float length = 1.0f, float width = 0.1f) = 0;
     /**
          * Draw a box at the provided position with the given extents.
@@ -792,13 +906,18 @@ public:
 
     /**
      *  Render the scene from the current camera view to an image and store this image under the given name.
+     *  NOTE: This function may not be thread-safe. For thread-safe image rendering use an ImageRenderer.
      *  @param filename - path + name of where to store the image. The image format may depend on the implementation.
      *  @param width - width in pixels of the image
      *  @param height - height in pixels
      *  @param include_drawings - if true, also render additional drawings in image, else not
      */
     virtual bool renderImage(const std::string& filename, unsigned int width, unsigned int height, bool include_drawings = false) = 0;
-    // TODO add renderImage from different camera transformations if needed
+
+    /**
+     *  Creates a new ImageRenderer.
+     */
+    virtual ImageRendererPtr createImageRenderer() = 0;
     /**
      *  Position the camera such that all bodies in the scene are visible.
      * @param include_drawings - if true, it also ensures that all user drawings are visible
@@ -813,6 +932,13 @@ public:
     virtual void removeDrawing(const Handle& handle) = 0;
     virtual void removeAllDrawings() = 0;
 
+    /**
+     * Set the color of the object/robot with the given name.
+     * By default all objects/robots are shown.
+     * @param name - name of the object to show or hide
+     * @param visible - if true, show it, else hide. 
+     */
+    virtual void setColor(const std::string& name, const Eigen::Vector4f& color) = 0;
     /**
      * Sets whether to show the object/robot with the given name in the viewer.
      * By default all objects/robots are shown.
