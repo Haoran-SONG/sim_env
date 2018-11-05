@@ -387,6 +387,13 @@ public:
     virtual void getLocalCenterOfMass(Eigen::Vector3f& com) const = 0;
     virtual float getGroundFriction() const = 0;
     virtual void setGroundFriction(float coeff) = 0;
+    /**
+     *  Enable or disable this link. If disabled, the link can not collide with anything.
+     * @param b_enable - True -> enabled, False -> disabled
+     */
+    virtual void setEnabled(bool b_enable) = 0;
+    // returns whether this link is enabled
+    virtual bool isEnabled() const = 0;
 };
 
 class Joint : public virtual Entity {
@@ -676,6 +683,14 @@ public:
     virtual float getInertia() const = 0; // TODO this should return a matrix
     virtual BoundingBox getLocalAABB() const = 0;
     virtual float getGroundFriction() const = 0;
+    /**
+     * Enable or disable this object. A disabled object does not physically interact (i.e. collide)
+     * with any other object. By default, every object is enabled.
+     * @param b_enable - True = disable, False = Enable
+     */
+    virtual void setEnabled(bool b_enable) = 0;
+    // returns whether this object is enabled. An object is enabled if at least one of its links is enabled
+    virtual bool isEnabled() const = 0;
 };
 
 /**
@@ -1046,6 +1061,11 @@ public:
          * @return true iff there was a state to restore to
          */
     virtual bool restoreState() = 0;
+
+    /**
+     *  Removes the last saved state without setting the world to it.
+     */
+    virtual void dropState() = 0;
 
     /**
          * Returns a mutex to lock this world.
