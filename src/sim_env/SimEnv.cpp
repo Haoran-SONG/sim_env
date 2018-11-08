@@ -13,8 +13,10 @@ sim_env::Ball::Ball() = default;
 
 sim_env::Ball::Ball(const Ball& other) = default;
 
-sim_env::Ball::Ball(Eigen::Vector3f lcenter, float lradius) :
-    center(lcenter), radius(lradius) {
+sim_env::Ball::Ball(Eigen::Vector3f lcenter, float lradius)
+    : center(lcenter)
+    , radius(lradius)
+{
 }
 
 sim_env::Ball::~Ball() = default;
@@ -35,7 +37,8 @@ sim_env::WorldViewer::~WorldViewer() = default;
 
 std::atomic_uint sim_env::WorldViewer::Handle::_global_id_counter(1);
 
-sim_env::WorldViewer::Handle::Handle(bool valid_handle) {
+sim_env::WorldViewer::Handle::Handle(bool valid_handle)
+{
     if (valid_handle) {
         _id = _global_id_counter++;
     } else {
@@ -43,41 +46,52 @@ sim_env::WorldViewer::Handle::Handle(bool valid_handle) {
     }
 }
 
-bool sim_env::WorldViewer::Handle::isValid() const {
+bool sim_env::WorldViewer::Handle::isValid() const
+{
     return _id != 0;
 }
 
-sim_env::WorldViewer::Handle::Handle(const WorldViewer::Handle& other) {
+sim_env::WorldViewer::Handle::Handle(const WorldViewer::Handle& other)
+{
     _id = other._id;
 }
 
 sim_env::WorldViewer::Handle::~Handle() = default;
 
-WorldViewer::Handle& WorldViewer::Handle::operator=(const WorldViewer::Handle& other) {
+sim_env::WorldViewer::ImageRenderer::~ImageRenderer() = default;
+
+WorldViewer::Handle& WorldViewer::Handle::operator=(const WorldViewer::Handle& other)
+{
     _id = other._id;
     return *this;
 }
 
-unsigned int sim_env::WorldViewer::Handle::getID() const {
+unsigned int sim_env::WorldViewer::Handle::getID() const
+{
     return _id;
 }
 
-void sim_env::Logger::logErr(const boost::format &bf, const std::string &prefix) const {
+void sim_env::Logger::logErr(const boost::format& bf, const std::string& prefix) const
+{
     logErr(boost::str(bf), prefix);
 }
 
-void sim_env::Logger::logInfo(const boost::format &bf, const std::string &prefix) const {
+void sim_env::Logger::logInfo(const boost::format& bf, const std::string& prefix) const
+{
     logInfo(boost::str(bf), prefix);
 }
 
-void sim_env::Logger::logWarn(const boost::format &bf, const std::string &prefix) const {
+void sim_env::Logger::logWarn(const boost::format& bf, const std::string& prefix) const
+{
     logWarn(boost::str(bf), prefix);
 }
 
-void sim_env::Logger::logDebug(const boost::format &bf, const std::string &prefix) const {
+void sim_env::Logger::logDebug(const boost::format& bf, const std::string& prefix) const
+{
     logDebug(boost::str(bf), prefix);
 }
 
-void sim_env::Logger::log(const boost::format &bf, LogLevel level, const std::string &prefix) const {
+void sim_env::Logger::log(const boost::format& bf, LogLevel level, const std::string& prefix) const
+{
     log(boost::str(bf), level, prefix);
 }
