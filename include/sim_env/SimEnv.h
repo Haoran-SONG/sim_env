@@ -836,6 +836,17 @@ public:
              * @return handle to delete this grid again
              */
         virtual Handle drawVoxelGrid(const grid::VoxelGrid<float, Eigen::Vector4f>& grid, const Handle& old_handle = Handle(false)) = 0;
+
+        /**
+         * Remove the drawing with the given handle.
+         * If there is no drawing for that handle, this is a no-op.
+         */
+        virtual void removeDrawing(const Handle& handle) = 0;
+
+        /**
+         * Remove all drawings.
+         */
+        virtual void removeAllDrawings() = 0;
     };
     typedef std::shared_ptr<ImageRenderer> ImageRendererPtr;
     typedef std::shared_ptr<const ImageRenderer> ImageRendererConstPtr;
@@ -914,10 +925,6 @@ public:
      */
     virtual bool renderImage(const std::string& filename, unsigned int width, unsigned int height, bool include_drawings = false) = 0;
 
-    /**
-     *  Creates a new ImageRenderer.
-     */
-    virtual ImageRendererPtr createImageRenderer() = 0;
     /**
      *  Position the camera such that all bodies in the scene are visible.
      * @param include_drawings - if true, it also ensures that all user drawings are visible
@@ -1143,6 +1150,13 @@ public:
          * @return shared pointer to a world viewer showing this world.
          */
     virtual WorldViewerPtr getViewer() = 0;
+
+    /**
+     * Returns an instance of an image renderer.
+     * The image renderer is independent of the Viewer. That is 
+     * @return shared pointer to an image renderer that allows rendering images from this world
+     */
+    virtual WorldViewer::ImageRendererPtr getImageRenderer() = 0;
 
     /**
          * Returns an instance of the logger used in the context of this environment.
