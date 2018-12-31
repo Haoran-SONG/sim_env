@@ -752,7 +752,9 @@ public:
          *  @param height - height in pixels
          *  @param include_drawings - if true, also render additional drawings in image, else not
          */
-        virtual bool renderImage(const std::string& filename, unsigned int width, unsigned int height, bool include_drawings = false) = 0;
+        virtual bool renderImage(const std::string& filename,
+                                 unsigned int width, unsigned int height, bool include_drawings = false) = 0;
+
         // TODO add renderImage from different camera transformations if needed
         /**
          *  Position the camera such that all bodies in the scene are visible.
