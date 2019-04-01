@@ -1099,6 +1099,15 @@ public:
     virtual bool checkCollision(ObjectPtr object, std::vector<Contact>& contacts) = 0;
 
     /**
+     * Checks whether the given object is in collision, and fills collidors with all objects that
+     * it collides with.
+     * @param object
+     * @param collidors - all colliding objects are stored in this list
+     * @return true iff object is in collision with any other object
+     */
+    virtual bool checkCollision(ObjectPtr object, std::vector<ObjectPtr>& collidors) = 0;
+
+    /**
          * Checks whether the given link is in collision.
          * @param link
          * @param contacts - (optional) all contacts are stored in this list
