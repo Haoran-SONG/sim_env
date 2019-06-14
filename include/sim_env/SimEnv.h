@@ -295,6 +295,11 @@ struct DOFInformation {
     Eigen::Array2f position_limits; // [min, max]
     Eigen::Array2f velocity_limits; // [min, max]
     Eigen::Array2f acceleration_limits; // [min, max]
+    /**
+     * If DOF is cyclic the position can take any value specified within position_limits,
+     * and the position can wrap around the interval's limits (like orientations in [-pi, pi))
+     */
+    bool cyclic;
 };
 
 struct Ball {
@@ -305,6 +310,15 @@ struct Ball {
     Ball(const Ball& other);
     ~Ball();
     Ball& operator=(const Ball& other);
+};
+
+// Represents the geometry of a link as a mesh (3d) or polygon (2d)
+struct Geometry {
+    // In case of a polygon, z coordinate is zero and subsequent vertices are edge connected.
+    // The vertices then form a counter-clockwise oriented polygon.
+    std::vector<Eigen::Vector3f> vertices;
+    std::vector<std::tuple<unsigned int, unsigned int, unsigned int>> triangles; // empty in case geometry is 2D(polygon)
+    bool is_polygon; // true if geometry is 2d
 };
 
 class Link : public virtual Entity {
@@ -339,6 +353,13 @@ public:
     virtual void updateBallApproximation(std::vector<Ball>& balls,
         std::vector<Ball>::iterator& start,
         std::vector<Ball>::iterator& end) const = 0;
+
+    /**
+      * Return the geometries of this link.
+      */
+    virtual std::vector<Geometry> getGeometries() const = 0;
+    virtual void getGeometries(std::vector<Geometry>& geoms) const = 0;
+
     /**
          * Checks whether this Link collides with anything.
          * @return True if this Link collides with something
@@ -385,8 +406,32 @@ public:
     virtual float getMass() const = 0;
     virtual void getCenterOfMass(Eigen::Vector3f& com) const = 0;
     virtual void getLocalCenterOfMass(Eigen::Vector3f& com) const = 0;
-    virtual float getGroundFriction() const = 0;
-    virtual void setGroundFriction(float coeff) = 0;
+    /**
+     * Return the friction coefficient mu of this link when it is standing on a support surface.
+     */
+    virtual float getGroundFrictionCoefficient() const = 0;
+    virtual void setGroundFrictionCoefficient(float mu) = 0;
+    /**
+     * Return the maximal frictional torque, i.e. m = mu * \int_A |x| p(x) dA,
+     * where A is the support region, dA the differential element of area A,
+     * x the position of dA, and p(x) the pressure at x
+     */
+    virtual float getGroundFrictionLimitTorque() const = 0;
+    /**
+     * Return the maximal frictional force, i.e. f = mu * m * g;
+     */
+    virtual float getGroundFrictionLimitForce() const = 0;
+    /**
+     * Set the value of the integral in the ground friction limit torque,
+     * i.e. in m = mu * \int_A |x| p(x) dA, set the value of \int_A |x| p(x) dA.
+     */
+    virtual void setGroundFrictionTorqueIntegral(float val) = 0;
+    virtual float getGroundFrictionTorqueIntegral() const = 0;
+    /**
+     *  Return the friction coefficient of this link's surface.
+     */
+    virtual float getContactFriction() const = 0;
+    virtual void setContactFriction(float mu) = 0;
     /**
      *  Enable or disable this link. If disabled, the link can not collide with anything.
      * @param b_enable - True -> enabled, False -> disabled
@@ -597,6 +642,7 @@ public:
          * @return base link
          */
     virtual LinkPtr getBaseLink() = 0;
+    virtual LinkConstPtr getConstBaseLink() const = 0;
 
     /**
          * Retrieves all joints of this object and adds them to the given list.
@@ -682,7 +728,7 @@ public:
     virtual float getMass() const = 0;
     virtual float getInertia() const = 0; // TODO this should return a matrix
     virtual BoundingBox getLocalAABB() const = 0;
-    virtual float getGroundFriction() const = 0;
+    //     virtual float getGroundFriction() const = 0;
     /**
      * Enable or disable this object. A disabled object does not physically interact (i.e. collide)
      * with any other object. By default, every object is enabled.
@@ -712,10 +758,6 @@ public:
          * @param controll_fn callback function with signature ControlCallback that
          */
     virtual void setController(ControlCallback controll_fn) = 0;
-    // /**
-    //  * Returns for each active degree of freedom a delta_i > 0 that can be used to numerically compute
-    //  */
-    // virtual void getGradientDeltas(Eigen::VectorXf& deltas) const = 0;
     virtual ~Robot() = 0;
 };
 
@@ -737,7 +779,7 @@ public:
 
     class ImageRenderer {
         /**
-         * An ImageRenderer allows you to render camera images of a scene. 
+         * An ImageRenderer allows you to render camera images of a scene.
          * The underlying implementation guarantees that an ImageRenderer can also be used
          * in non-GUI threads.
          */
@@ -770,7 +812,7 @@ public:
          * Sets whether to show the object/robot with the given name when rendering images.
          * By default all objects/robots are shown.
          * @param name - name of the object to show or hide
-         * @param visible - if true, show it, else hide. 
+         * @param visible - if true, show it, else hide.
          */
         virtual void setVisible(const std::string& name, bool visible) = 0;
 
@@ -778,7 +820,7 @@ public:
          * Set the color of the object/robot with the given name.
          * By default all objects/robots are shown.
          * @param name - name of the object to show or hide
-         * @param visible - if true, show it, else hide. 
+         * @param visible - if true, show it, else hide.
          */
         virtual void setColor(const std::string& name, const Eigen::Vector4f& color) = 0;
         /**
@@ -945,14 +987,14 @@ public:
      * Set the color of the object/robot with the given name.
      * By default all objects/robots are shown.
      * @param name - name of the object to show or hide
-     * @param visible - if true, show it, else hide. 
+     * @param visible - if true, show it, else hide.
      */
     virtual void setColor(const std::string& name, const Eigen::Vector4f& color) = 0;
     /**
      * Sets whether to show the object/robot with the given name in the viewer.
      * By default all objects/robots are shown.
      * @param name - name of the object to show or hide
-     * @param visible - if true, show it, else hide. 
+     * @param visible - if true, show it, else hide.
      */
     virtual void setVisible(const std::string& name, bool visible) = 0;
 };
@@ -1164,7 +1206,7 @@ public:
 
     /**
      * Returns an instance of an image renderer.
-     * The image renderer is independent of the Viewer. That is 
+     * The image renderer is independent of the Viewer. That is
      * @return shared pointer to an image renderer that allows rendering images from this world
      */
     virtual WorldViewer::ImageRendererPtr getImageRenderer() = 0;
