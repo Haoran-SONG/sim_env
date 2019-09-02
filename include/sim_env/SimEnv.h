@@ -795,9 +795,10 @@ public:
          *  @param include_drawings - if true, also render additional drawings in image, else not
          */
         virtual bool renderImage(const std::string& filename,
-                                 unsigned int width, unsigned int height, bool include_drawings = false) = 0;
+            unsigned int width, unsigned int height, bool include_drawings = false)
+            = 0;
 
-        // TODO add renderImage from different camera transformations if needed
+        // TODO add renderImage from different/c msra trsnsformations if den
         /**
          *  Position the camera such that all bodies in the scene are visible.
          * @param include_drawings - if true, it also ensures that all user drawings are visible
@@ -1077,6 +1078,19 @@ public:
          * @param steps number of physics time steps to simulate.
          */
     virtual void stepPhysics(std::vector<Contact>& contacts, int steps = 1) = 0;
+
+    /**
+         * If the underlying world representation supports physics simulation,
+         * this function issues a physics simulation step. This version of the function 
+         * takes a callback function as argument that is called for each contact occuring 
+         * during the simulation. It can be used to terminate the propagation
+         * prematurely by returning false.
+         * @param steps number of physics time steps to simulate.
+         * @param callback - a function that receives two colliding links as arguments and
+         *     returns a bool indicating whether simulation should be continued (true) or not (false).
+         * @return true, if the callback never returned false, else false
+         */
+    virtual bool stepPhysics(const std::function<bool(LinkPtr, LinkPtr)>& callback, int steps = 1) = 0;
 
     /**
          * Returns whether the underlying world representation supports physics simulation or not.
