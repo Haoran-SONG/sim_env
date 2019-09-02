@@ -1044,6 +1044,13 @@ public:
     virtual void getObjects(std::vector<ObjectConstPtr>& objects, bool exclude_robots = true) const = 0;
 
     /**
+      * Return all static objects in this world.
+      * @param statics - list to be filled with objects. List is not cleared.
+      */
+    virtual void getStaticObjects(std::vector<ObjectPtr>& statics) = 0;
+    virtual void getStaticObjects(std::vector<ObjectConstPtr>& statics) const = 0;
+
+    /**
          * Returns all objects stored in this world that overlap with the specified axis aligned
          * bounding box.
          * @param aabb - Axis aligned bounding box in world frame.
