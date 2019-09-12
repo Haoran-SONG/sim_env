@@ -51,7 +51,7 @@ namespace YAML {
                 }
                 matrix.resize(Eigen::NoChange, num_elements / _Rows);
             }
-            if (num_elements != matrix.cols() * matrix.rows()) {
+            if (num_elements != (unsigned int)(matrix.cols() * matrix.rows())) {
                 logger->logErr("Could not decode Eigen::Matrix. Number of elements in YAML node is not equal to the"
                                " number of requested matrix elements.", "sim_env/YamlUtils.h");
                 return false;
